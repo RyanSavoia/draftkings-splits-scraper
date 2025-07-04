@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from flask import Flask, jsonify
 import re
+import os
 
 app = Flask(__name__)
 
@@ -601,4 +602,5 @@ if __name__ == '__main__':
     print("="*50)
     
     # Start Flask app
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)
