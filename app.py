@@ -1,15 +1,23 @@
 import requests
 from bs4 import BeautifulSoup
 from flask import Flask, jsonify
+from flask_cors import CORS
 import re
 import os
 
 app = Flask(__name__)
 
+# Add CORS configuration for your domains
+CORS(app, origins=[
+    "https://thebettinginsider.com",
+    "https://www.thebettinginsider.com"
+])
+
+
 def scrape_betting_splits():
     """Scrape betting splits from DraftKings - all active sports for today and tomorrow"""
     base_url = "https://dknetwork.draftkings.com/draftkings-sportsbook-betting-splits/"
-    
+   
     # Known sport IDs - get today AND tomorrow for everything (except soccer)
     sport_configs = {
         'all_sports': {'id': 0, 'date_ranges': ['today', 'tomorrow']},
@@ -29,47 +37,47 @@ def scrape_betting_splits():
         'champions_league': {'id': 40685, 'date_ranges': ['today']},  # Soccer: today only
         'europa_league': {'id': 41410, 'date_ranges': ['today']},  # Soccer: today only
     }
-    
+   
     all_games_data = []
-    
+   
     # Skip the "all_sports" page - just get individual sports for cleaner data
     print("Scraping individual sports for today and tomorrow...")
-    
+   
     # Scrape each sport for both today and tomorrow
     for sport_name, config in sport_configs.items():
         if sport_name == 'all_sports':
             continue
-            
+           
         sport_id = config['id']
         date_ranges = config['date_ranges']
-        
+       
         print(f"Scraping {sport_name} (ID: {sport_id})...")
         sport_total_games = 0
-        
+       
         # Loop through each date range for this sport (today, tomorrow)
         for date_range in date_ranges:
             print(f"  Scraping {sport_name} for {date_range}...")
             page = 1
-            
+           
             while True:
                 try:
                     if page == 1:
                         url = f"{base_url}?tb_eg={sport_id}&tb_edate={date_range}&tb_emt=0"
                     else:
                         url = f"{base_url}?tb_eg={sport_id}&tb_edate={date_range}&tb_page={page}"
-                    
+                   
                     print(f"    Scraping {sport_name} page {page} ({date_range})...")
                     response = requests.get(url)
                     response.raise_for_status()
                     soup = BeautifulSoup(response.content, 'html.parser')
-                    
+                   
                     games = soup.find_all('div', class_='tb-se')
                     print(f"      Found {len(games)} game divs on {sport_name} page {page}")
-                    
+                   
                     if not games:
                         print(f"      No games found on {sport_name} page {page}, stopping")
                         break
-                    
+                   
                     page_games = []
                     for game in games:
                         game_data = parse_game(game)
@@ -77,9 +85,9 @@ def scrape_betting_splits():
                             print(f"        Parsed game: {game_data['title']}")
                             # Add date range info to game data
                             game_data['scraped_date_range'] = date_range
-                            
+                           
                             # Check if we already have this exact game (avoid duplicates)
-                            duplicate = any(existing['title'] == game_data['title'] and 
+                            duplicate = any(existing['title'] == game_data['title'] and
                                           existing['time'] == game_data['time'] and
                                           existing['scraped_date_range'] == game_data['scraped_date_range']
                                           for existing in all_games_data)
@@ -90,28 +98,28 @@ def scrape_betting_splits():
                                 print(f"        Skipping duplicate: {game_data['title']}")
                         else:
                             print(f"        Failed to parse a game on {sport_name} page {page}")
-                    
+                   
                     if not page_games:
                         print(f"      No new games found on {sport_name} page {page}, stopping")
                         break
-                    
+                   
                     sport_total_games += len(page_games)
                     print(f"      Found {len(page_games)} new games on {sport_name} page {page}")
-                    
+                   
                     page += 1
-                    
+                   
                     # Safety check to prevent infinite loops
                     if page > 20:
                         print(f"      Reached maximum page limit (20) for {sport_name}, stopping")
                         break
-                        
+                       
                 except Exception as e:
                     print(f"      Error scraping {sport_name} page {page}: {e}")
                     break
-        
+       
         print(f"  Total new games found for {sport_name}: {sport_total_games}")
         print()
-    
+   
     print(f"Total unique games scraped: {len(all_games_data)}")
     return all_games_data
 
@@ -122,10 +130,10 @@ def parse_game(game_soup):
         title_elem = game_soup.find('div', class_='tb-se-title')
         if not title_elem:
             return None
-            
+           
         title = title_elem.find('h5').text.strip()
         time = title_elem.find('span').text.strip()
-        
+       
         # Extract teams from title - handle different formats
         if ' @ ' in title:
             # Format: "Team A @ Team B" (MLB, WNBA)
@@ -148,15 +156,15 @@ def parse_game(game_soup):
         else:
             print(f"    Cannot parse title format: '{title}'")
             return None
-        
+       
         # Find the main market wrapper
         market_wrapper = game_soup.find('div', class_='tb-market-wrap')
         if not market_wrapper:
             return None
-            
+           
         # Find all market sections - each has a header (tb-se-head) followed by data (tb-sm)
         market_containers = market_wrapper.find_all('div', recursive=False)
-        
+       
         game_data = {
             'title': title,
             'time': time,
@@ -164,14 +172,14 @@ def parse_game(game_soup):
             'home_team': home_team,
             'markets': {}
         }
-        
+       
         for container in market_containers:
             market_data = parse_market(container)
             if market_data:
                 game_data['markets'][market_data['type']] = market_data['bets']
-        
+       
         return game_data
-    
+   
     except Exception as e:
         print(f"Error parsing game: {e}")
         return None
@@ -183,24 +191,24 @@ def parse_market(market_soup):
         header = market_soup.find('div', class_='tb-se-head')
         if not header:
             return None
-            
+           
         market_type = header.find('div').text.strip()
-        
+       
         # Get all bets in this market
         bets = market_soup.find_all('div', class_='tb-sodd')
-        
+       
         market_bets = []
-        
+       
         for bet in bets:
             bet_data = parse_bet(bet)
             if bet_data:
                 market_bets.append(bet_data)
-        
+       
         return {
             'type': market_type,
             'bets': market_bets
         }
-    
+   
     except Exception as e:
         print(f"Error parsing market: {e}")
         return None
@@ -213,22 +221,22 @@ def parse_bet(bet_soup):
         if not team_elem:
             return None
         team = team_elem.text.strip()
-        
+       
         # Get odds
         odds_elem = bet_soup.find('a', class_='tb-odd-s')
         if not odds_elem:
             return None
         odds = odds_elem.text.strip()
-        
+       
         # Get percentages - find all divs with % in text
         all_divs = bet_soup.find_all('div')
         percentages = []
-        
+       
         for div in all_divs:
             text = div.text.strip()
             if '%' in text and text.replace('%', '').replace(' ', '').isdigit():
                 percentages.append(text)
-        
+       
         # Should have 2 percentages: handle % and bets %
         if len(percentages) >= 2:
             handle_pct = percentages[0]
@@ -236,14 +244,14 @@ def parse_bet(bet_soup):
         else:
             handle_pct = "0%"
             bets_pct = "0%"
-        
+       
         return {
             'team': team,
             'odds': odds,
             'handle_pct': handle_pct,
             'bets_pct': bets_pct
         }
-    
+   
     except Exception as e:
         print(f"Error parsing bet: {e}")
         return None
@@ -251,7 +259,7 @@ def parse_bet(bet_soup):
 def extract_all_bets(games):
     """Extract all individual bets from all games for analysis"""
     all_bets = []
-    
+   
     for game in games:
         for market_type, bets in game['markets'].items():
             for bet in bets:
@@ -265,7 +273,7 @@ def extract_all_bets(games):
                     'market_type': market_type
                 }
                 all_bets.append(bet_with_context)
-    
+   
     return all_bets
 
 def parse_percentage(pct_str):
@@ -287,105 +295,105 @@ def parse_odds(odds_str):
 def big_bettor_alerts(games, limit=7):
     """Find picks with highest handle % of the day (exclude totals)"""
     all_bets = extract_all_bets(games)
-    
+   
     # Filter out totals (Over/Under bets)
     non_total_bets = [bet for bet in all_bets if bet['market_type'] != 'Total']
-    
+   
     # Sort by handle percentage (descending)
     sorted_bets = sorted(non_total_bets, key=lambda x: parse_percentage(x['handle_pct']), reverse=True)
-    
+   
     return sorted_bets[:limit]
 
 def sharpest_longshot_bets(games, limit=7):
     """Find longshot bets (+200 or more) with at least 30% higher handle% than bet%"""
     all_bets = extract_all_bets(games)
-    
+   
     sharp_longshots = []
-    
+   
     for bet in all_bets:
         odds = parse_odds(bet['odds'])
         handle_pct = parse_percentage(bet['handle_pct'])
         bets_pct = parse_percentage(bet['bets_pct'])
-        
+       
         # Check if it's a longshot (+200 or more)
         if odds >= 200:
             # Check if handle% is at least 30% higher than bet%
             if handle_pct >= (bets_pct + 30):
                 bet['handle_vs_bets_diff'] = handle_pct - bets_pct
                 sharp_longshots.append(bet)
-    
+   
     # Sort by handle vs bets difference (descending)
     sorted_longshots = sorted(sharp_longshots, key=lambda x: x['handle_vs_bets_diff'], reverse=True)
-    
+   
     return sorted_longshots[:limit]
 
 def get_rich_quick_scheme(games):
     """Find huge underdogs (+400 or more) getting at least 30% of the money"""
     all_bets = extract_all_bets(games)
-    
+   
     rich_quick_bets = []
-    
+   
     for bet in all_bets:
         odds = parse_odds(bet['odds'])
         handle_pct = parse_percentage(bet['handle_pct'])
-        
+       
         # Check if it's a huge underdog (+400 or more) with at least 30% handle
         if odds >= 400 and handle_pct >= 30:
             rich_quick_bets.append(bet)
-    
+   
     # Sort by handle percentage (descending)
     sorted_bets = sorted(rich_quick_bets, key=lambda x: parse_percentage(x['handle_pct']), reverse=True)
-    
+   
     return sorted_bets
 
 def biggest_square_bets(games, limit=7):
     """Find picks with biggest discrepancy between bet% and handle% (high bet%, low handle%)"""
     all_bets = extract_all_bets(games)
-    
+   
     square_bets = []
-    
+   
     for bet in all_bets:
         handle_pct = parse_percentage(bet['handle_pct'])
         bets_pct = parse_percentage(bet['bets_pct'])
-        
+       
         # Calculate square score (bet% - handle%)
         square_score = bets_pct - handle_pct
-        
+       
         # Only include if bet% is significantly higher than handle%
         if square_score > 0:
             bet['square_score'] = square_score
             square_bets.append(bet)
-    
+   
     # Sort by square score (descending)
     sorted_square = sorted(square_bets, key=lambda x: x['square_score'], reverse=True)
-    
+   
     return sorted_square[:limit]
 
 def filter_mlb_games(games):
     """Filter for MLB games only"""
     mlb_games = []
-    
+   
     # Common MLB team abbreviations and names
     mlb_teams = [
-        'Angels', 'Astros', 'Athletics', 'Blue Jays', 'Braves', 'Brewers', 
+        'Angels', 'Astros', 'Athletics', 'Blue Jays', 'Braves', 'Brewers',
         'Cardinals', 'Cubs', 'Diamondbacks', 'Dodgers', 'Giants', 'Guardians',
-        'Indians', 'Mariners', 'Marlins', 'Mets', 'Nationals', 'Orioles', 
-        'Padres', 'Phillies', 'Pirates', 'Rangers', 'Rays', 'Red Sox', 
+        'Indians', 'Mariners', 'Marlins', 'Mets', 'Nationals', 'Orioles',
+        'Padres', 'Phillies', 'Pirates', 'Rangers', 'Rays', 'Red Sox',
         'Reds', 'Rockies', 'Royals', 'Tigers', 'Twins', 'White Sox', 'Yankees',
-        'LAA', 'HOU', 'OAK', 'TOR', 'ATL', 'MIL', 'STL', 'CHC', 'ARI', 'LAD', 
-        'SF', 'CLE', 'SEA', 'MIA', 'NYM', 'WSN', 'WAS', 'BAL', 'SD', 'PHI', 
-        'PIT', 'TEX', 'TB', 'BOS', 'CIN', 'COL', 'KC', 'DET', 'MIN', 'CWS', 
+        'LAA', 'HOU', 'OAK', 'TOR', 'ATL', 'MIL', 'STL', 'CHC', 'ARI', 'LAD',
+        'SF', 'CLE', 'SEA', 'MIA', 'NYM', 'WSN', 'WAS', 'BAL', 'SD', 'PHI',
+        'PIT', 'TEX', 'TB', 'BOS', 'CIN', 'COL', 'KC', 'DET', 'MIN', 'CWS',
         'CHW', 'NYY', 'NY'
     ]
-    
+   
     for game in games:
         # Check if any MLB team names appear in the game title
         title_upper = game['title'].upper()
         is_mlb = any(team.upper() in title_upper for team in mlb_teams)
-        
+       
         if is_mlb:
             mlb_games.append(game)
-    
+   
     return mlb_games
 
 # Global variable to store scraped data
@@ -524,7 +532,7 @@ def get_analytics_summary():
     """Get a summary of all analytics"""
     all_games = get_cached_or_fresh_data()
     mlb_games = filter_mlb_games(all_games)
-    
+   
     return jsonify({
         'summary': {
             'total_games': len(all_games),
@@ -541,50 +549,50 @@ if __name__ == '__main__':
     # Test the scraper and compute all analytics
     print("Testing scraper...")
     games = scrape_betting_splits()
-    
+   
     # Cache the data globally
     cached_games_data = games
-    
+   
     print(f"Found {len(games)} games")
-    
+   
     if games:
         print("\nFirst game:")
         print(f"Title: {games[0]['title']}")
         print(f"Time: {games[0]['time']}")
         print(f"Markets: {list(games[0]['markets'].keys())}")
         print(f"Date Range: {games[0]['scraped_date_range']}")
-    
+   
     # Compute all analytics on startup
     print("\n" + "="*50)
     print("COMPUTING ALL ANALYTICS")
     print("="*50)
-    
+   
     # Big Bettor Alerts
     print("\n🔥 BIG BETTOR ALERTS (Top 7 - No Totals)")
     big_bettors = big_bettor_alerts(games)
     for i, bet in enumerate(big_bettors, 1):
         print(f"{i}. {bet['team']} ({bet['odds']}) - {bet['handle_pct']} handle | {bet['game_title']} | {bet['market_type']}")
-    
+   
     # Sharpest Longshots
     print("\n🎯 SHARPEST LONGSHOTS (+200 odds, 30%+ handle advantage)")
     longshots = sharpest_longshot_bets(games)
     for i, bet in enumerate(longshots, 1):
         diff = bet['handle_vs_bets_diff']
         print(f"{i}. {bet['team']} ({bet['odds']}) - {bet['handle_pct']} handle vs {bet['bets_pct']} bets (+{diff:.1f}%) | {bet['game_title']}")
-    
+   
     # Get Rich Quick
     print("\n💰 GET RICH QUICK SCHEME (+400 odds, 30%+ money)")
     rich_quick = get_rich_quick_scheme(games)
     for i, bet in enumerate(rich_quick, 1):
         print(f"{i}. {bet['team']} ({bet['odds']}) - {bet['handle_pct']} handle | {bet['game_title']}")
-    
+   
     # Biggest Square Bets
     print("\n🤡 BIGGEST SQUARE BETS (High bets%, low handle%)")
     squares = biggest_square_bets(games)
     for i, bet in enumerate(squares, 1):
         score = bet['square_score']
         print(f"{i}. {bet['team']} ({bet['odds']}) - {bet['bets_pct']} bets vs {bet['handle_pct']} handle (+{score:.1f}% square) | {bet['game_title']}")
-    
+   
     # Analytics Summary
     print("\n📊 ANALYTICS SUMMARY")
     mlb_games = filter_mlb_games(games)
@@ -594,13 +602,13 @@ if __name__ == '__main__':
     print(f"Sharpest longshots: {len(longshots)}")
     print(f"Get rich quick bets: {len(rich_quick)}")
     print(f"Biggest square bets: {len(squares)}")
-    
+   
     print("\n" + "="*50)
     print("Starting Flask server...")
     print("Data is cached - API endpoints will use cached data")
     print("Visit /refresh-cache to force new scraping")
     print("="*50)
-    
+   
     # Start Flask app
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
