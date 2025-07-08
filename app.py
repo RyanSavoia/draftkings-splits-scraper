@@ -4,6 +4,8 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 import re
 import os
+from datetime import datetime, timedelta
+import pytz
 
 app = Flask(__name__)
 
@@ -13,6 +15,34 @@ CORS(app, origins=[
     "https://www.thebettinginsider.com"
 ])
 
+# Global variables to store scraped data and timestamp
+cached_games_data = []
+cache_timestamp = None
+CACHE_DURATION_MINUTES = 30  # Cache expires after 30 minutes
+
+def is_cache_expired():
+    """Check if cache has expired"""
+    global cache_timestamp
+    if cache_timestamp is None:
+        return True
+    
+    now = datetime.now()
+    cache_age = now - cache_timestamp
+    return cache_age > timedelta(minutes=CACHE_DURATION_MINUTES)
+
+def get_cached_or_fresh_data():
+    """Get cached data if available and not expired, otherwise scrape fresh data"""
+    global cached_games_data, cache_timestamp
+    
+    if cached_games_data and not is_cache_expired():
+        print(f"Using cached data (age: {datetime.now() - cache_timestamp})...")
+        return cached_games_data
+    else:
+        print("Cache expired or empty, scraping fresh data...")
+        fresh_data = scrape_betting_splits()
+        cached_games_data = fresh_data
+        cache_timestamp = datetime.now()
+        return fresh_data
 
 def scrape_betting_splits():
     """Scrape betting splits from DraftKings - all active sports for today and tomorrow"""
@@ -396,24 +426,18 @@ def filter_mlb_games(games):
    
     return mlb_games
 
-# Global variable to store scraped data
-cached_games_data = []
-
-def get_cached_or_fresh_data():
-    """Get cached data if available, otherwise scrape fresh data"""
-    global cached_games_data
-    if cached_games_data:
-        print("Using cached data...")
-        return cached_games_data
-    else:
-        print("No cached data, scraping fresh...")
-        return scrape_betting_splits()
-
 # Flask routes
 @app.route('/')
 def home():
-    return """
+    cache_status = f"Cache: {'Active' if cached_games_data else 'Empty'}"
+    if cache_timestamp:
+        cache_age = datetime.now() - cache_timestamp
+        cache_status += f" (Age: {cache_age})"
+    
+    return f"""
     <h1>DraftKings Betting Splits Scraper</h1>
+    <p><strong>{cache_status}</strong></p>
+    <p>Cache Duration: {CACHE_DURATION_MINUTES} minutes</p>
     <h2>Data Endpoints:</h2>
     <ul>
         <li><a href="/all">/all</a> - All sports betting splits</li>
@@ -441,7 +465,8 @@ def get_all_games():
     return jsonify({
         'games': games,
         'count': len(games),
-        'cached': bool(cached_games_data)
+        'cached': bool(cached_games_data),
+        'cache_age_minutes': (datetime.now() - cache_timestamp).total_seconds() / 60 if cache_timestamp else 0
     })
 
 @app.route('/mlb')
@@ -452,7 +477,8 @@ def get_mlb_games():
     return jsonify({
         'games': mlb_games,
         'count': len(mlb_games),
-        'cached': bool(cached_games_data)
+        'cached': bool(cached_games_data),
+        'cache_age_minutes': (datetime.now() - cache_timestamp).total_seconds() / 60 if cache_timestamp else 0
     })
 
 @app.route('/test')
@@ -462,20 +488,22 @@ def test_scraper():
     return jsonify({
         'first_game': games[0] if games else None,
         'total_games': len(games),
-        'cached': bool(cached_games_data)
+        'cached': bool(cached_games_data),
+        'cache_age_minutes': (datetime.now() - cache_timestamp).total_seconds() / 60 if cache_timestamp else 0
     })
 
 @app.route('/refresh-cache')
 def refresh_cache():
     """Force refresh the data cache"""
-    global cached_games_data
+    global cached_games_data, cache_timestamp
     print("Forcing cache refresh...")
     cached_games_data = []
-    games = scrape_betting_splits()
-    cached_games_data = games
+    cache_timestamp = None
+    games = get_cached_or_fresh_data()
     return jsonify({
         'message': 'Cache refreshed successfully',
-        'total_games': len(games)
+        'total_games': len(games),
+        'cache_timestamp': cache_timestamp.isoformat() if cache_timestamp else None
     })
 
 # Analytics endpoints
@@ -552,6 +580,7 @@ if __name__ == '__main__':
    
     # Cache the data globally
     cached_games_data = games
+    cache_timestamp = datetime.now()
    
     print(f"Found {len(games)} games")
    
@@ -605,7 +634,7 @@ if __name__ == '__main__':
    
     print("\n" + "="*50)
     print("Starting Flask server...")
-    print("Data is cached - API endpoints will use cached data")
+    print(f"Data is cached for {CACHE_DURATION_MINUTES} minutes")
     print("Visit /refresh-cache to force new scraping")
     print("="*50)
    
