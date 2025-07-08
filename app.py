@@ -5,7 +5,6 @@ from flask_cors import CORS
 import re
 import os
 from datetime import datetime, timedelta
-import pytz
 
 app = Flask(__name__)
 
