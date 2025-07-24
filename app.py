@@ -425,6 +425,156 @@ def filter_mlb_games(games):
    
     return mlb_games
 
+def filter_games_by_sport(games, sport):
+    """Filter games by sport using team names"""
+    
+    # Comprehensive team lists for all 4 major leagues
+    team_lists = {
+        'mlb': [
+            # Full team names
+            'Angels', 'Astros', 'Athletics', 'Blue Jays', 'Braves', 'Brewers',
+            'Cardinals', 'Cubs', 'Diamondbacks', 'Dodgers', 'Giants', 'Guardians',
+            'Mariners', 'Marlins', 'Mets', 'Nationals', 'Orioles', 'Padres', 
+            'Phillies', 'Pirates', 'Rangers', 'Rays', 'Red Sox', 'Reds', 'Rockies', 
+            'Royals', 'Tigers', 'Twins', 'White Sox', 'Yankees',
+            # Abbreviations
+            'LAA', 'HOU', 'OAK', 'TOR', 'ATL', 'MIL', 'STL', 'CHC', 'ARI', 'LAD',
+            'SF', 'CLE', 'SEA', 'MIA', 'NYM', 'WSN', 'WAS', 'BAL', 'SD', 'PHI',
+            'PIT', 'TEX', 'TB', 'BOS', 'CIN', 'COL', 'KC', 'DET', 'MIN', 'CWS',
+            'CHW', 'NYY'
+        ],
+        'nba': [
+            # Full team names
+            'Hawks', 'Celtics', 'Nets', 'Hornets', 'Bulls', 'Cavaliers', 'Mavericks',
+            'Nuggets', 'Pistons', 'Warriors', 'Rockets', 'Pacers', 'Clippers', 'Lakers',
+            'Grizzlies', 'Heat', 'Bucks', 'Timberwolves', 'Pelicans', 'Knicks',
+            'Thunder', 'Magic', '76ers', 'Suns', 'Trail Blazers', 'Kings', 'Spurs',
+            'Raptors', 'Jazz', 'Wizards',
+            # City names often used
+            'Atlanta', 'Boston', 'Brooklyn', 'Charlotte', 'Chicago', 'Cleveland',
+            'Dallas', 'Denver', 'Detroit', 'Golden State', 'Houston', 'Indiana',
+            'Los Angeles', 'Memphis', 'Miami', 'Milwaukee', 'Minnesota', 'New Orleans',
+            'New York', 'Oklahoma City', 'Orlando', 'Philadelphia', 'Phoenix',
+            'Portland', 'Sacramento', 'San Antonio', 'Toronto', 'Utah', 'Washington',
+            # Abbreviations
+            'ATL', 'BOS', 'BKN', 'CHA', 'CHI', 'CLE', 'DAL', 'DEN', 'DET', 'GSW',
+            'HOU', 'IND', 'LAC', 'LAL', 'MEM', 'MIA', 'MIL', 'MIN', 'NOP', 'NYK',
+            'OKC', 'ORL', 'PHI', 'PHX', 'POR', 'SAC', 'SAS', 'TOR', 'UTA', 'WAS'
+        ],
+        'nfl': [
+            # Full team names
+            'Cardinals', 'Falcons', 'Ravens', 'Bills', 'Panthers', 'Bears', 'Bengals',
+            'Browns', 'Cowboys', 'Broncos', 'Lions', 'Packers', 'Texans', 'Colts',
+            'Jaguars', 'Chiefs', 'Raiders', 'Chargers', 'Rams', 'Dolphins', 'Vikings',
+            'Patriots', 'Saints', 'Giants', 'Jets', 'Eagles', 'Steelers', '49ers',
+            'Seahawks', 'Buccaneers', 'Titans', 'Commanders',
+            # City names
+            'Arizona', 'Atlanta', 'Baltimore', 'Buffalo', 'Carolina', 'Chicago',
+            'Cincinnati', 'Cleveland', 'Dallas', 'Denver', 'Detroit', 'Green Bay',
+            'Houston', 'Indianapolis', 'Jacksonville', 'Kansas City', 'Las Vegas',
+            'Los Angeles', 'Miami', 'Minnesota', 'New England', 'New Orleans',
+            'New York', 'Philadelphia', 'Pittsburgh', 'San Francisco', 'Seattle',
+            'Tampa Bay', 'Tennessee', 'Washington',
+            # Abbreviations
+            'ARI', 'ATL', 'BAL', 'BUF', 'CAR', 'CHI', 'CIN', 'CLE', 'DAL', 'DEN',
+            'DET', 'GB', 'HOU', 'IND', 'JAX', 'KC', 'LV', 'LAC', 'LAR', 'MIA',
+            'MIN', 'NE', 'NO', 'NYG', 'NYJ', 'PHI', 'PIT', 'SF', 'SEA', 'TB',
+            'TEN', 'WAS'
+        ],
+        'nhl': [
+            # Full team names
+            'Ducks', 'Coyotes', 'Bruins', 'Sabres', 'Flames', 'Hurricanes',
+            'Blackhawks', 'Avalanche', 'Blue Jackets', 'Stars', 'Red Wings',
+            'Oilers', 'Panthers', 'Kings', 'Wild', 'Canadiens', 'Predators',
+            'Devils', 'Islanders', 'Rangers', 'Senators', 'Flyers', 'Penguins',
+            'Sharks', 'Kraken', 'Blues', 'Lightning', 'Maple Leafs', 'Canucks',
+            'Golden Knights', 'Capitals', 'Jets',
+            # City names
+            'Anaheim', 'Arizona', 'Boston', 'Buffalo', 'Calgary', 'Carolina',
+            'Chicago', 'Colorado', 'Columbus', 'Dallas', 'Detroit', 'Edmonton',
+            'Florida', 'Los Angeles', 'Minnesota', 'Montreal', 'Nashville',
+            'New Jersey', 'New York', 'Ottawa', 'Philadelphia', 'Pittsburgh',
+            'San Jose', 'Seattle', 'St. Louis', 'Tampa Bay', 'Toronto', 'Vancouver',
+            'Vegas', 'Washington', 'Winnipeg',
+            # Abbreviations
+            'ANA', 'ARI', 'BOS', 'BUF', 'CGY', 'CAR', 'CHI', 'COL', 'CBJ', 'DAL',
+            'DET', 'EDM', 'FLA', 'LAK', 'MIN', 'MTL', 'NSH', 'NJD', 'NYI', 'NYR',
+            'OTT', 'PHI', 'PIT', 'SJS', 'SEA', 'STL', 'TBL', 'TOR', 'VAN', 'VGK',
+            'WSH', 'WPG'
+        ]
+    }
+    
+    if sport not in team_lists:
+        return []
+    
+    sport_games = []
+    sport_teams = team_lists[sport]
+    
+    for game in games:
+        # Check if any team names from this sport appear in the game title
+        title_upper = game['title'].upper()
+        is_sport_game = any(team.upper() in title_upper for team in sport_teams)
+        
+        if is_sport_game:
+            sport_games.append(game)
+    
+    return sport_games
+
+def big_bettor_alerts_by_sport(games, sport, limit=7):
+    """Find picks with biggest difference between handle % and bets % for specific sport"""
+    # Filter games by sport
+    sport_games = filter_games_by_sport(games, sport)
+    
+    if not sport_games:
+        return []
+    
+    # Extract all bets from sport games
+    all_bets = extract_all_bets(sport_games)
+    
+    # Filter out totals (Over/Under bets)
+    non_total_bets = [bet for bet in all_bets if bet['market_type'] != 'Total']
+    
+    # Calculate handle% - bets% difference for each bet
+    for bet in non_total_bets:
+        handle_pct = parse_percentage(bet['handle_pct'])
+        bets_pct = parse_percentage(bet['bets_pct'])
+        bet['handle_vs_bets_diff'] = handle_pct - bets_pct
+    
+    # Sort by handle vs bets difference (descending)
+    sorted_bets = sorted(non_total_bets, key=lambda x: x['handle_vs_bets_diff'], reverse=True)
+    
+    return sorted_bets[:limit]
+
+def biggest_square_bets_by_sport(games, sport, limit=7):
+    """Find picks with biggest discrepancy between bet% and handle% for specific sport"""
+    # Filter games by sport
+    sport_games = filter_games_by_sport(games, sport)
+    
+    if not sport_games:
+        return []
+    
+    # Extract all bets from sport games
+    all_bets = extract_all_bets(sport_games)
+    
+    square_bets = []
+    
+    for bet in all_bets:
+        handle_pct = parse_percentage(bet['handle_pct'])
+        bets_pct = parse_percentage(bet['bets_pct'])
+        
+        # Calculate square score (bet% - handle%)
+        square_score = bets_pct - handle_pct
+        
+        # Only include if bet% is significantly higher than handle%
+        if square_score > 0:
+            bet['square_score'] = square_score
+            square_bets.append(bet)
+    
+    # Sort by square score (descending)
+    sorted_square = sorted(square_bets, key=lambda x: x['square_score'], reverse=True)
+    
+    return sorted_square[:limit]
+
 # Flask routes
 @app.route('/')
 def home():
@@ -450,6 +600,20 @@ def home():
         <li><a href="/get-rich-quick">/get-rich-quick</a> - Huge underdogs (+400+) getting 30%+ of money</li>
         <li><a href="/biggest-square-bets">/biggest-square-bets</a> - Biggest discrepancy between bet% and handle%</li>
         <li><a href="/analytics-summary">/analytics-summary</a> - Summary of all analytics</li>
+    </ul>
+    <h2>Sports-Specific Big Bettor Alerts:</h2>
+    <ul>
+        <li><a href="/big-bettor-alerts-mlb">/big-bettor-alerts-mlb</a> - MLB biggest handle% vs bets% difference</li>
+        <li><a href="/big-bettor-alerts-nba">/big-bettor-alerts-nba</a> - NBA biggest handle% vs bets% difference</li>
+        <li><a href="/big-bettor-alerts-nfl">/big-bettor-alerts-nfl</a> - NFL biggest handle% vs bets% difference</li>
+        <li><a href="/big-bettor-alerts-nhl">/big-bettor-alerts-nhl</a> - NHL biggest handle% vs bets% difference</li>
+    </ul>
+    <h2>Sports-Specific Square Bets:</h2>
+    <ul>
+        <li><a href="/biggest-square-bets-mlb">/biggest-square-bets-mlb</a> - MLB biggest square bets</li>
+        <li><a href="/biggest-square-bets-nba">/biggest-square-bets-nba</a> - NBA biggest square bets</li>
+        <li><a href="/biggest-square-bets-nfl">/biggest-square-bets-nfl</a> - NFL biggest square bets</li>
+        <li><a href="/biggest-square-bets-nhl">/biggest-square-bets-nhl</a> - NHL biggest square bets</li>
     </ul>
     <h2>Cache Management:</h2>
     <ul>
@@ -572,6 +736,104 @@ def get_analytics_summary():
         }
     })
 
+# NEW SPORTS-SPECIFIC ENDPOINTS
+
+@app.route('/big-bettor-alerts-mlb')
+def get_big_bettor_alerts_mlb():
+    """Get MLB big bettor alerts (biggest handle% vs bets% difference)"""
+    all_games = get_cached_or_fresh_data()
+    alerts = big_bettor_alerts_by_sport(all_games, 'mlb')
+    return jsonify({
+        'big_bettor_alerts_mlb': alerts,
+        'count': len(alerts),
+        'description': 'MLB picks with the biggest difference between handle % and bets %',
+        'cached': bool(cached_games_data)
+    })
+
+@app.route('/big-bettor-alerts-nba')
+def get_big_bettor_alerts_nba():
+    """Get NBA big bettor alerts (biggest handle% vs bets% difference)"""
+    all_games = get_cached_or_fresh_data()
+    alerts = big_bettor_alerts_by_sport(all_games, 'nba')
+    return jsonify({
+        'big_bettor_alerts_nba': alerts,
+        'count': len(alerts),
+        'description': 'NBA picks with the biggest difference between handle % and bets %',
+        'cached': bool(cached_games_data)
+    })
+
+@app.route('/big-bettor-alerts-nfl')
+def get_big_bettor_alerts_nfl():
+    """Get NFL big bettor alerts (biggest handle% vs bets% difference)"""
+    all_games = get_cached_or_fresh_data()
+    alerts = big_bettor_alerts_by_sport(all_games, 'nfl')
+    return jsonify({
+        'big_bettor_alerts_nfl': alerts,
+        'count': len(alerts),
+        'description': 'NFL picks with the biggest difference between handle % and bets %',
+        'cached': bool(cached_games_data)
+    })
+
+@app.route('/big-bettor-alerts-nhl')
+def get_big_bettor_alerts_nhl():
+    """Get NHL big bettor alerts (biggest handle% vs bets% difference)"""
+    all_games = get_cached_or_fresh_data()
+    alerts = big_bettor_alerts_by_sport(all_games, 'nhl')
+    return jsonify({
+        'big_bettor_alerts_nhl': alerts,
+        'count': len(alerts),
+        'description': 'NHL picks with the biggest difference between handle % and bets %',
+        'cached': bool(cached_games_data)
+    })
+
+@app.route('/biggest-square-bets-mlb')
+def get_biggest_square_bets_mlb():
+    """Get MLB biggest square bets"""
+    all_games = get_cached_or_fresh_data()
+    square_bets = biggest_square_bets_by_sport(all_games, 'mlb')
+    return jsonify({
+        'biggest_square_bets_mlb': square_bets,
+        'count': len(square_bets),
+        'description': 'MLB picks with biggest discrepancy between bet% and handle% (high bet%, low handle%)',
+        'cached': bool(cached_games_data)
+    })
+
+@app.route('/biggest-square-bets-nba')
+def get_biggest_square_bets_nba():
+    """Get NBA biggest square bets"""
+    all_games = get_cached_or_fresh_data()
+    square_bets = biggest_square_bets_by_sport(all_games, 'nba')
+    return jsonify({
+        'biggest_square_bets_nba': square_bets,
+        'count': len(square_bets),
+        'description': 'NBA picks with biggest discrepancy between bet% and handle% (high bet%, low handle%)',
+        'cached': bool(cached_games_data)
+    })
+
+@app.route('/biggest-square-bets-nfl')
+def get_biggest_square_bets_nfl():
+    """Get NFL biggest square bets"""
+    all_games = get_cached_or_fresh_data()
+    square_bets = biggest_square_bets_by_sport(all_games, 'nfl')
+    return jsonify({
+        'biggest_square_bets_nfl': square_bets,
+        'count': len(square_bets),
+        'description': 'NFL picks with biggest discrepancy between bet% and handle% (high bet%, low handle%)',
+        'cached': bool(cached_games_data)
+    })
+
+@app.route('/biggest-square-bets-nhl')
+def get_biggest_square_bets_nhl():
+    """Get NHL biggest square bets"""
+    all_games = get_cached_or_fresh_data()
+    square_bets = biggest_square_bets_by_sport(all_games, 'nhl')
+    return jsonify({
+        'biggest_square_bets_nhl': square_bets,
+        'count': len(square_bets),
+        'description': 'NHL picks with biggest discrepancy between bet% and handle% (high bet%, low handle%)',
+        'cached': bool(cached_games_data)
+    })
+
 if __name__ == '__main__':
     # Test the scraper and compute all analytics
     print("Testing scraper...")
@@ -621,11 +883,26 @@ if __name__ == '__main__':
         score = bet['square_score']
         print(f"{i}. {bet['team']} ({bet['odds']}) - {bet['bets_pct']} bets vs {bet['handle_pct']} handle (+{score:.1f}% square) | {bet['game_title']}")
    
+    # NEW: Sports-specific analytics preview
+    print("\n📊 SPORTS-SPECIFIC BIG BETTOR ALERTS PREVIEW")
+    for sport in ['mlb', 'nba', 'nfl', 'nhl']:
+        sport_alerts = big_bettor_alerts_by_sport(games, sport, limit=3)
+        print(f"\n{sport.upper()} Top 3:")
+        for i, bet in enumerate(sport_alerts, 1):
+            diff = bet['handle_vs_bets_diff']
+            print(f"  {i}. {bet['team']} ({bet['odds']}) - {bet['handle_pct']} handle vs {bet['bets_pct']} bets (+{diff:.1f}%) | {bet['game_title']}")
+   
     # Analytics Summary
     print("\n📊 ANALYTICS SUMMARY")
     mlb_games = filter_mlb_games(games)
+    nba_games = filter_games_by_sport(games, 'nba')
+    nfl_games = filter_games_by_sport(games, 'nfl')
+    nhl_games = filter_games_by_sport(games, 'nhl')
     print(f"Total games: {len(games)}")
     print(f"MLB games: {len(mlb_games)}")
+    print(f"NBA games: {len(nba_games)}")
+    print(f"NFL games: {len(nfl_games)}")
+    print(f"NHL games: {len(nhl_games)}")
     print(f"Big bettor alerts: {len(big_bettors)}")
     print(f"Sharpest longshots: {len(longshots)}")
     print(f"Get rich quick bets: {len(rich_quick)}")
