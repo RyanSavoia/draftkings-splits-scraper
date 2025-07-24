@@ -425,12 +425,31 @@ def filter_mlb_games(games):
    
     return mlb_games
 
- used
-            'Atlanta', 'Boston', 'Brooklyn', 'Charlotte', 'Chicago', 'Cleveland',
-            'Dallas', 'Denver', 'Detroit', 'Golden State', 'Houston', 'Indiana',
-            'Los Angeles', 'Memphis', 'Miami', 'Milwaukee', 'Minnesota', 'New Orleans',
-            'New York', 'Oklahoma City', 'Orlando', 'Philadelphia', 'Phoenix',
-            'Portland', 'Sacramento', 'San Antonio', 'Toronto', 'Utah', 'Washington',
+def filter_games_by_sport(games, sport):
+    """Filter games by sport using team names"""
+    
+    # Team lists with ONLY team names and abbreviations (no city names)
+    team_lists = {
+        'mlb': [
+            # Full team names
+            'Angels', 'Astros', 'Athletics', 'Blue Jays', 'Braves', 'Brewers',
+            'Cardinals', 'Cubs', 'Diamondbacks', 'Dodgers', 'Giants', 'Guardians',
+            'Mariners', 'Marlins', 'Mets', 'Nationals', 'Orioles', 'Padres', 
+            'Phillies', 'Pirates', 'Rangers', 'Rays', 'Red Sox', 'Reds', 'Rockies', 
+            'Royals', 'Tigers', 'Twins', 'White Sox', 'Yankees',
+            # Abbreviations
+            'LAA', 'HOU', 'OAK', 'TOR', 'ATL', 'MIL', 'STL', 'CHC', 'ARI', 'LAD',
+            'SF', 'CLE', 'MIA', 'NYM', 'WSN', 'WAS', 'BAL', 'SD', 'PHI',
+            'PIT', 'TEX', 'TB', 'BOS', 'CIN', 'COL', 'KC', 'DET', 'MIN', 'CWS',
+            'CHW', 'NYY'
+        ],
+        'nba': [
+            # Full team names
+            'Hawks', 'Celtics', 'Nets', 'Hornets', 'Bulls', 'Cavaliers', 'Mavericks',
+            'Nuggets', 'Pistons', 'Warriors', 'Rockets', 'Pacers', 'Clippers', 'Lakers',
+            'Grizzlies', 'Heat', 'Bucks', 'Timberwolves', 'Pelicans', 'Knicks',
+            'Thunder', 'Magic', '76ers', 'Suns', 'Trail Blazers', 'Kings', 'Spurs',
+            'Raptors', 'Jazz', 'Wizards',
             # Abbreviations
             'ATL', 'BOS', 'BKN', 'CHA', 'CHI', 'CLE', 'DAL', 'DEN', 'DET', 'GSW',
             'HOU', 'IND', 'LAC', 'LAL', 'MEM', 'MIA', 'MIL', 'MIN', 'NOP', 'NYK',
@@ -443,18 +462,10 @@ def filter_mlb_games(games):
             'Jaguars', 'Chiefs', 'Raiders', 'Chargers', 'Rams', 'Dolphins', 'Vikings',
             'Patriots', 'Saints', 'Giants', 'Jets', 'Eagles', 'Steelers', '49ers',
             'Seahawks', 'Buccaneers', 'Titans', 'Commanders',
-            # City names
-            'Arizona', 'Atlanta', 'Baltimore', 'Buffalo', 'Carolina', 'Chicago',
-            'Cincinnati', 'Cleveland', 'Dallas', 'Denver', 'Detroit', 'Green Bay',
-            'Houston', 'Indianapolis', 'Jacksonville', 'Kansas City', 'Las Vegas',
-            'Los Angeles', 'Miami', 'Minnesota', 'New England', 'New Orleans',
-            'New York', 'Philadelphia', 'Pittsburgh', 'San Francisco', 'Seattle',
-            'Tampa Bay', 'Tennessee', 'Washington',
             # Abbreviations
             'ARI', 'ATL', 'BAL', 'BUF', 'CAR', 'CHI', 'CIN', 'CLE', 'DAL', 'DEN',
             'DET', 'GB', 'HOU', 'IND', 'JAX', 'KC', 'LV', 'LAC', 'LAR', 'MIA',
-            'MIN', 'NE', 'NO', 'NYG', 'NYJ', 'PHI', 'PIT', 'SF', 'SEA', 'TB',
-            'TEN', 'WAS'
+            'MIN', 'NE', 'NO', 'NYG', 'NYJ', 'PHI', 'PIT', 'SF', 'TEN', 'WAS'
         ],
         'nhl': [
             # Full team names
@@ -464,17 +475,10 @@ def filter_mlb_games(games):
             'Devils', 'Islanders', 'Rangers', 'Senators', 'Flyers', 'Penguins',
             'Sharks', 'Kraken', 'Blues', 'Lightning', 'Maple Leafs', 'Canucks',
             'Golden Knights', 'Capitals', 'Jets',
-            # City names
-            'Anaheim', 'Arizona', 'Boston', 'Buffalo', 'Calgary', 'Carolina',
-            'Chicago', 'Colorado', 'Columbus', 'Dallas', 'Detroit', 'Edmonton',
-            'Florida', 'Los Angeles', 'Minnesota', 'Montreal', 'Nashville',
-            'New Jersey', 'New York', 'Ottawa', 'Philadelphia', 'Pittsburgh',
-            'San Jose', 'Seattle', 'St. Louis', 'Tampa Bay', 'Toronto', 'Vancouver',
-            'Vegas', 'Washington', 'Winnipeg',
             # Abbreviations
             'ANA', 'ARI', 'BOS', 'BUF', 'CGY', 'CAR', 'CHI', 'COL', 'CBJ', 'DAL',
             'DET', 'EDM', 'FLA', 'LAK', 'MIN', 'MTL', 'NSH', 'NJD', 'NYI', 'NYR',
-            'OTT', 'PHI', 'PIT', 'SJS', 'SEA', 'STL', 'TBL', 'TOR', 'VAN', 'VGK',
+            'OTT', 'PHI', 'PIT', 'SJS', 'STL', 'TBL', 'TOR', 'VAN', 'VGK',
             'WSH', 'WPG'
         ]
     }
