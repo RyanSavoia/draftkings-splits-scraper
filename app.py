@@ -428,36 +428,44 @@ def filter_mlb_games(games):
 def filter_games_by_sport(games, sport):
     """Filter games by sport using team names"""
     
-    # Team lists with ONLY full team names (no abbreviations or city names)
+    # Team lists with full team names AND location-specific names for overlapping teams
     team_lists = {
         'mlb': [
             'Angels', 'Astros', 'Athletics', 'Blue Jays', 'Braves', 'Brewers',
-            'Cardinals', 'Cubs', 'Diamondbacks', 'Dodgers', 'Giants', 'Guardians',
+            'Cubs', 'Diamondbacks', 'Dodgers', 'Guardians',
             'Mariners', 'Marlins', 'Mets', 'Nationals', 'Orioles', 'Padres', 
-            'Phillies', 'Pirates', 'Rangers', 'Rays', 'Red Sox', 'Reds', 'Rockies', 
-            'Royals', 'Tigers', 'Twins', 'White Sox', 'Yankees'
+            'Phillies', 'Pirates', 'Rays', 'Red Sox', 'Reds', 'Rockies', 
+            'Royals', 'Tigers', 'Twins', 'White Sox', 'Yankees',
+            # Location-specific for overlapping teams
+            'STL Cardinals', 'SF Giants', 'TEX Rangers'
         ],
         'nba': [
             'Hawks', 'Celtics', 'Nets', 'Hornets', 'Bulls', 'Cavaliers', 'Mavericks',
             'Nuggets', 'Pistons', 'Warriors', 'Rockets', 'Pacers', 'Clippers', 'Lakers',
             'Grizzlies', 'Heat', 'Bucks', 'Timberwolves', 'Pelicans', 'Knicks',
-            'Thunder', 'Magic', '76ers', 'Suns', 'Trail Blazers', 'Kings', 'Spurs',
-            'Raptors', 'Jazz', 'Wizards'
+            'Thunder', 'Magic', '76ers', 'Suns', 'Trail Blazers', 'Spurs',
+            'Raptors', 'Jazz', 'Wizards',
+            # Location-specific for overlapping teams
+            'SAC Kings'
         ],
         'nfl': [
-            'Cardinals', 'Falcons', 'Ravens', 'Bills', 'Panthers', 'Bears', 'Bengals',
+            'Falcons', 'Ravens', 'Bills', 'Bears', 'Bengals',
             'Browns', 'Cowboys', 'Broncos', 'Lions', 'Packers', 'Texans', 'Colts',
             'Jaguars', 'Chiefs', 'Raiders', 'Chargers', 'Rams', 'Dolphins', 'Vikings',
-            'Patriots', 'Saints', 'Giants', 'Jets', 'Eagles', 'Steelers', '49ers',
-            'Seahawks', 'Buccaneers', 'Titans', 'Commanders'
+            'Patriots', 'Saints', 'Eagles', 'Steelers', '49ers',
+            'Seahawks', 'Buccaneers', 'Titans', 'Commanders',
+            # Location-specific for overlapping teams
+            'ARI Cardinals', 'NY Giants', 'NY Jets', 'CAR Panthers'
         ],
         'nhl': [
             'Ducks', 'Coyotes', 'Bruins', 'Sabres', 'Flames', 'Hurricanes',
             'Blackhawks', 'Avalanche', 'Blue Jackets', 'Stars', 'Red Wings',
-            'Oilers', 'Panthers', 'Kings', 'Wild', 'Canadiens', 'Predators',
-            'Devils', 'Islanders', 'Rangers', 'Senators', 'Flyers', 'Penguins',
+            'Oilers', 'Wild', 'Canadiens', 'Predators',
+            'Devils', 'Islanders', 'Senators', 'Flyers', 'Penguins',
             'Sharks', 'Kraken', 'Blues', 'Lightning', 'Maple Leafs', 'Canucks',
-            'Golden Knights', 'Capitals', 'Jets'
+            'Golden Knights', 'Capitals',
+            # Location-specific for overlapping teams
+            'LA Kings', 'NY Rangers', 'FLA Panthers', 'WPG Jets'
         ]
     }
     
@@ -487,7 +495,7 @@ def filter_games_by_sport(games, sport):
     return sport_games
 
 def big_bettor_alerts_by_sport(games, sport, limit=7):
-    """Find picks with biggest difference between handle % and bets % for specific sport"""
+    """Find picks where handle % is at least 30% MORE than bets % for specific sport"""
     # Filter games by sport
     sport_games = filter_games_by_sport(games, sport)
     
@@ -500,14 +508,19 @@ def big_bettor_alerts_by_sport(games, sport, limit=7):
     # Filter out totals (Over/Under bets)
     non_total_bets = [bet for bet in all_bets if bet['market_type'] != 'Total']
     
-    # Calculate handle% - bets% difference for each bet
+    # Filter for bets where handle% is at least 30% MORE than bets%
+    big_bettor_bets = []
     for bet in non_total_bets:
         handle_pct = parse_percentage(bet['handle_pct'])
         bets_pct = parse_percentage(bet['bets_pct'])
         bet['handle_vs_bets_diff'] = handle_pct - bets_pct
+        
+        # Only include if handle% is at least 30% higher than bets%
+        if bet['handle_vs_bets_diff'] >= 30:
+            big_bettor_bets.append(bet)
     
     # Sort by handle vs bets difference (descending)
-    sorted_bets = sorted(non_total_bets, key=lambda x: x['handle_vs_bets_diff'], reverse=True)
+    sorted_bets = sorted(big_bettor_bets, key=lambda x: x['handle_vs_bets_diff'], reverse=True)
     
     return sorted_bets[:limit]
 
