@@ -425,32 +425,7 @@ def filter_mlb_games(games):
    
     return mlb_games
 
-def filter_games_by_sport(games, sport):
-    """Filter games by sport using team names"""
-    
-    # Comprehensive team lists for all 4 major leagues
-    team_lists = {
-        'mlb': [
-            # Full team names
-            'Angels', 'Astros', 'Athletics', 'Blue Jays', 'Braves', 'Brewers',
-            'Cardinals', 'Cubs', 'Diamondbacks', 'Dodgers', 'Giants', 'Guardians',
-            'Mariners', 'Marlins', 'Mets', 'Nationals', 'Orioles', 'Padres', 
-            'Phillies', 'Pirates', 'Rangers', 'Rays', 'Red Sox', 'Reds', 'Rockies', 
-            'Royals', 'Tigers', 'Twins', 'White Sox', 'Yankees',
-            # Abbreviations
-            'LAA', 'HOU', 'OAK', 'TOR', 'ATL', 'MIL', 'STL', 'CHC', 'ARI', 'LAD',
-            'SF', 'CLE', 'SEA', 'MIA', 'NYM', 'WSN', 'WAS', 'BAL', 'SD', 'PHI',
-            'PIT', 'TEX', 'TB', 'BOS', 'CIN', 'COL', 'KC', 'DET', 'MIN', 'CWS',
-            'CHW', 'NYY'
-        ],
-        'nba': [
-            # Full team names
-            'Hawks', 'Celtics', 'Nets', 'Hornets', 'Bulls', 'Cavaliers', 'Mavericks',
-            'Nuggets', 'Pistons', 'Warriors', 'Rockets', 'Pacers', 'Clippers', 'Lakers',
-            'Grizzlies', 'Heat', 'Bucks', 'Timberwolves', 'Pelicans', 'Knicks',
-            'Thunder', 'Magic', '76ers', 'Suns', 'Trail Blazers', 'Kings', 'Spurs',
-            'Raptors', 'Jazz', 'Wizards',
-            # City names often used
+ used
             'Atlanta', 'Boston', 'Brooklyn', 'Charlotte', 'Chicago', 'Cleveland',
             'Dallas', 'Denver', 'Detroit', 'Golden State', 'Houston', 'Indiana',
             'Los Angeles', 'Memphis', 'Miami', 'Milwaukee', 'Minnesota', 'New Orleans',
