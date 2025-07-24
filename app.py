@@ -428,58 +428,36 @@ def filter_mlb_games(games):
 def filter_games_by_sport(games, sport):
     """Filter games by sport using team names"""
     
-    # Team lists with ONLY team names and abbreviations (no city names)
+    # Team lists with ONLY full team names (no abbreviations or city names)
     team_lists = {
         'mlb': [
-            # Full team names
             'Angels', 'Astros', 'Athletics', 'Blue Jays', 'Braves', 'Brewers',
             'Cardinals', 'Cubs', 'Diamondbacks', 'Dodgers', 'Giants', 'Guardians',
             'Mariners', 'Marlins', 'Mets', 'Nationals', 'Orioles', 'Padres', 
             'Phillies', 'Pirates', 'Rangers', 'Rays', 'Red Sox', 'Reds', 'Rockies', 
-            'Royals', 'Tigers', 'Twins', 'White Sox', 'Yankees',
-            # Abbreviations
-            'LAA', 'HOU', 'OAK', 'TOR', 'ATL', 'MIL', 'STL', 'CHC', 'ARI', 'LAD',
-            'SF', 'CLE', 'MIA', 'NYM', 'WSN', 'WAS', 'BAL', 'SD', 'PHI',
-            'PIT', 'TEX', 'TB', 'BOS', 'CIN', 'COL', 'KC', 'DET', 'MIN', 'CWS',
-            'CHW', 'NYY'
+            'Royals', 'Tigers', 'Twins', 'White Sox', 'Yankees'
         ],
         'nba': [
-            # Full team names
             'Hawks', 'Celtics', 'Nets', 'Hornets', 'Bulls', 'Cavaliers', 'Mavericks',
             'Nuggets', 'Pistons', 'Warriors', 'Rockets', 'Pacers', 'Clippers', 'Lakers',
             'Grizzlies', 'Heat', 'Bucks', 'Timberwolves', 'Pelicans', 'Knicks',
             'Thunder', 'Magic', '76ers', 'Suns', 'Trail Blazers', 'Kings', 'Spurs',
-            'Raptors', 'Jazz', 'Wizards',
-            # Abbreviations
-            'ATL', 'BOS', 'BKN', 'CHA', 'CHI', 'CLE', 'DAL', 'DEN', 'DET', 'GSW',
-            'HOU', 'IND', 'LAC', 'LAL', 'MEM', 'MIA', 'MIL', 'MIN', 'NOP', 'NYK',
-            'OKC', 'ORL', 'PHI', 'PHX', 'POR', 'SAC', 'SAS', 'TOR', 'UTA', 'WAS'
+            'Raptors', 'Jazz', 'Wizards'
         ],
         'nfl': [
-            # Full team names
             'Cardinals', 'Falcons', 'Ravens', 'Bills', 'Panthers', 'Bears', 'Bengals',
             'Browns', 'Cowboys', 'Broncos', 'Lions', 'Packers', 'Texans', 'Colts',
             'Jaguars', 'Chiefs', 'Raiders', 'Chargers', 'Rams', 'Dolphins', 'Vikings',
             'Patriots', 'Saints', 'Giants', 'Jets', 'Eagles', 'Steelers', '49ers',
-            'Seahawks', 'Buccaneers', 'Titans', 'Commanders',
-            # Abbreviations
-            'ARI', 'ATL', 'BAL', 'BUF', 'CAR', 'CHI', 'CIN', 'CLE', 'DAL', 'DEN',
-            'DET', 'GB', 'HOU', 'IND', 'JAX', 'KC', 'LV', 'LAC', 'LAR', 'MIA',
-            'MIN', 'NE', 'NO', 'NYG', 'NYJ', 'PHI', 'PIT', 'SF', 'TEN', 'WAS'
+            'Seahawks', 'Buccaneers', 'Titans', 'Commanders'
         ],
         'nhl': [
-            # Full team names
             'Ducks', 'Coyotes', 'Bruins', 'Sabres', 'Flames', 'Hurricanes',
             'Blackhawks', 'Avalanche', 'Blue Jackets', 'Stars', 'Red Wings',
             'Oilers', 'Panthers', 'Kings', 'Wild', 'Canadiens', 'Predators',
             'Devils', 'Islanders', 'Rangers', 'Senators', 'Flyers', 'Penguins',
             'Sharks', 'Kraken', 'Blues', 'Lightning', 'Maple Leafs', 'Canucks',
-            'Golden Knights', 'Capitals', 'Jets',
-            # Abbreviations
-            'ANA', 'ARI', 'BOS', 'BUF', 'CGY', 'CAR', 'CHI', 'COL', 'CBJ', 'DAL',
-            'DET', 'EDM', 'FLA', 'LAK', 'MIN', 'MTL', 'NSH', 'NJD', 'NYI', 'NYR',
-            'OTT', 'PHI', 'PIT', 'SJS', 'STL', 'TBL', 'TOR', 'VAN', 'VGK',
-            'WSH', 'WPG'
+            'Golden Knights', 'Capitals', 'Jets'
         ]
     }
     
@@ -492,7 +470,16 @@ def filter_games_by_sport(games, sport):
     for game in games:
         # Check if any team names from this sport appear in the game title
         title_upper = game['title'].upper()
-        is_sport_game = any(team.upper() in title_upper for team in sport_teams)
+        
+        # Use word boundary matching to avoid partial matches
+        import re
+        is_sport_game = False
+        for team in sport_teams:
+            # Create pattern that matches whole words only
+            pattern = r'\b' + re.escape(team.upper()) + r'\b'
+            if re.search(pattern, title_upper):
+                is_sport_game = True
+                break
         
         if is_sport_game:
             sport_games.append(game)
