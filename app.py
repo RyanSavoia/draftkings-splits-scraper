@@ -54,7 +54,7 @@ def scrape_betting_splits():
         'wnba': {'id': 94682, 'date_ranges': ['today', 'tomorrow']},
         'nba': {'id': 42648, 'date_ranges': ['today', 'tomorrow']},
         'nhl': {'id': 42133, 'date_ranges': ['today', 'tomorrow']},
-        'mls': {'id': 89345, 'date_ranges': ['today']},  # Soccer: today only
+        # 'mls': {'id': 89345, 'date_ranges': ['today']},  # REMOVED MLS
         'ufc': {'id': 9034, 'date_ranges': ['today', 'tomorrow']},
         'nfl': {'id': 88808, 'date_ranges': ['today', 'tomorrow']},
         'ncaaf': {'id': 87637, 'date_ranges': ['today', 'tomorrow']},
