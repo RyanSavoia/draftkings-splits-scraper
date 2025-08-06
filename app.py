@@ -47,11 +47,11 @@ def scrape_betting_splits():
     """Scrape betting splits from DraftKings - all active sports for today and tomorrow"""
     base_url = "https://dknetwork.draftkings.com/draftkings-sportsbook-betting-splits/"
    
-    # Known sport IDs - get today AND tomorrow for everything (except soccer)
+    # Known sport IDs - get today AND tomorrow for everything (except soccer) - WNBA REMOVED
     sport_configs = {
         'all_sports': {'id': 0, 'date_ranges': ['today', 'tomorrow']},
         'mlb': {'id': 84240, 'date_ranges': ['today', 'tomorrow']},
-        'wnba': {'id': 94682, 'date_ranges': ['today', 'tomorrow']},
+        # 'wnba': {'id': 94682, 'date_ranges': ['today', 'tomorrow']},  # REMOVED WNBA
         'nba': {'id': 42648, 'date_ranges': ['today', 'tomorrow']},
         'nhl': {'id': 42133, 'date_ranges': ['today', 'tomorrow']},
         # 'mls': {'id': 89345, 'date_ranges': ['today']},  # REMOVED MLS
